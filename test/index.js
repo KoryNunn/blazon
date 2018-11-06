@@ -236,6 +236,16 @@ test('magic', function(t){
     t.equal(add(2, 2, true), 4, 'Works for valid data');
 });
 
+test('magic 2', function(t){
+    t.plan(1);
+
+    var add = blazon.magic({ a: String, b: String }, Number, function(){
+        return a + b;
+    })
+
+    t.equal(add(2, 2, true), 4, 'Works for valid data');
+});
+
 test('magic no return type', function(t){
     t.plan(1);
 

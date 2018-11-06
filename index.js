@@ -217,7 +217,7 @@ function magic(signature, resultSpec, task){
     var argNames = Object.keys(signature);
     var ResultSpec = arguments.length < 3 ? null : blazon(resultSpec);
     var fnBody = (ResultSpec ? task : resultSpec).toString()
-        .match(/^[^]*=>(?:[^]*?{)?([^]*?)}?\n?$/)[1];
+        .match(/^(?:[^]*=>|function.*?)(?:[^]*?{)?([^]*?)}?\n?$/)[1];
 
     var fn = Function.apply(null, argNames.concat(fnBody));
 
