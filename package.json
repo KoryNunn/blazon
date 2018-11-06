@@ -1,0 +1,18 @@
+{
+  "name": "blazon",
+  "version": "1.0.0",
+  "description": "A fast run-time non-trivial type checker with an idiomatic API",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "tape": "^4.9.1"
+  },
+  "scripts": {
+    "test": "node test"
+  },
+  "author": "Kory Nunn <knunn187@gmail.com> (https://korynunn.com)",
+  "license": "ISC"
+}
