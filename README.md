@@ -15,7 +15,7 @@ var { Maybe, Custom } = blazon;
 const Email = blazon(blazon.Union(
     String,
     Custom(value =>
-        value.match() ? value : throw new Error('Email must contain an `@` and a `.`')
+        value.match(/^.+@[^.].*?\..*[^.]$/) ? value : throw new Error('Value must be an email')
     )
 ));
 
