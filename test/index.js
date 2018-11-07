@@ -4,7 +4,6 @@ var assert = require('assert');
 
 var TenThousand = 10000;
 var OneHundredThousand = 100000;
-var OneMillion = 1000000;
 
 function createSpec(){
     return blazon({
@@ -23,7 +22,7 @@ function logTime(t, iterations, startTime){
 
 test('performance: create spec', function(t){
     t.plan(1);
-    var iterations = OneMillion;
+    var iterations = OneHundredThousand;
 
     var startTime = Date.now();
 
@@ -105,10 +104,30 @@ test('performance: Nothing but errors', function(t){
     logTime(t, iterations, startTime);
 });
 
+test('check custom constructor', function(t){
+    t.plan(5);
+
+    function MyConstructor(){}
+    function SubConstructor(){}
+    SubConstructor.prototype = Object.create(MyConstructor.prototype);
+    SubConstructor.prototype.constructor = SubConstructor;
+
+    var testValue = new MyConstructor();
+    var testSubValue = new SubConstructor();
+
+    var TestSpec = blazon(MyConstructor);
+
+    t.ok(TestSpec.is(testValue), 'instanceof passes');
+    t.ok(TestSpec.is(testSubValue), 'sub instanceof passes');
+    t.notOk(TestSpec.is({}), 'different instance fails');
+    t.notOk(TestSpec.is(3), 'Fails string check');
+    t.notOk(TestSpec.is(''), 'fails Custom check');
+});
+
 test('Spec.is', function(t){
     t.plan(3);
 
-    var NonEmptyString = blazon(blazon.Union(String, blazon.Custom(x => assert(x, 'Must not be empty'))));
+    var NonEmptyString = blazon(blazon.And(String, blazon.Custom(x => assert(x, 'Must not be empty'))));
 
     t.ok(NonEmptyString.is('x'));
 
@@ -116,10 +135,10 @@ test('Spec.is', function(t){
     t.notOk(NonEmptyString.is(''), 'fails Custom check');
 });
 
-test('Union', function(t){
+test('And', function(t){
     t.plan(3);
 
-    var NonEmptyString = blazon(blazon.Union(String, blazon.Custom(x => assert(x, 'Must not be empty'))));
+    var NonEmptyString = blazon(blazon.And(String, blazon.Custom(x => assert(x, 'Must not be empty'))));
 
     t.ok(NonEmptyString('x'));
 
@@ -186,7 +205,7 @@ test('Sub Spec', function(t){
             }
         });
     } catch (error) {
-        t.equal(error.message, 'Invalid type: Expected String, Got: false', 'Threw in subSpec');
+        t.ok(~error.message.indexOf('Invalid type: Expected String, Got: false'), 'Threw in subSpec');
     }
 });
 

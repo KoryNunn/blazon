@@ -12,7 +12,7 @@ describe or depict (armorial bearings) in a correct heraldic manner.
 var blazon = require('blazen');
 var { Maybe, Custom } = blazon;
 
-const Email = blazon(blazon.Union(
+const Email = blazon(blazon.And(
     String,
     Custom(value =>
         value.match(/^.+@[^.].*?\..*[^.]$/) ? value : throw new Error('Value must be an email')
@@ -41,9 +41,13 @@ function greetUser(maybeNotAValidUser){
 
 # Frigin-fast
 
-1000,000 non-trivial Types can be defined on an i7 laptop in ~700ms
-100,000 non-trivial passing checks can be performed on an i7 laptop in ~130ms
-10,000 non-trivial failing checks can be performed on an i7 laptop in ~37ms
+On an i7 laptop:
+
+100,000 non-trivial Types can be defined in ~700ms
+
+100,000 non-trivial passing checks can be performed in ~130ms
+
+10,000 non-trivial failing checks can be performed in ~37ms
 
 # Available base types:
 
@@ -57,7 +61,7 @@ Extra types provided by blazon:
 
 Ensure a value is either Type or null/undefined
 
-## `Union(Types...)`
+## `And(Types...)`
 
 Ensures a value is every one of `Types`.
 

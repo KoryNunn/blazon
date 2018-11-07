@@ -16,7 +16,15 @@ function isBaseType(spec){
     );
 }
 
-function checkBaseType(spec, value){
+function throwError(message, trace){
+    var error = new Error(`\nBlazon error:\n\t${message}\n\nSpec:\n\t${trace}\nSource:`)
+
+    error.stack = error.stack.replace(/^.*\/blazon\/.*$\n/gm, '');
+
+    throw error;
+}
+
+function checkBaseType(spec, value, trace){
     if(
         value != null &&
         value.constructor.name === spec.name &&
@@ -26,16 +34,16 @@ function checkBaseType(spec, value){
         return value;
     }
 
-    throw new Error(`Invalid type: Expected ${spec.name || spec}, Got: ${value}`);
+    throwError(`Invalid type: Expected ${spec.name || spec}, Got: ${value}`, trace);
 }
 
-function checkObject(spec, target, data){
+function checkObject(spec, target, data, trace){
     if(data == null || !(data instanceof Object)){
-        throw new Error(`Invalid type: Expected ${spec}, Got: ${data}`);
+        throwError(`Invalid type: Expected ${spec.name || spec}, Got: ${data}`, trace);
     }
 
     for(var key in spec){
-        var result = check(spec[key], data[key]);
+        var result = check(spec[key], target[key] || {}, data[key], `\`${key}\`: ${trace}`);
         if(result || key in data){
             target[key] = result && result instanceof Default ? result.value : result;
         }
@@ -44,26 +52,30 @@ function checkObject(spec, target, data){
     return target;
 }
 
-function check(spec, value){
-    if(spec && spec.prototype instanceof SubSpec){
-        return spec(value);
+function check(spec, target, value, trace){
+    if(spec == null){
+        return spec === value && value;
+    } else {
+        if(spec.prototype instanceof SubSpec){
+            return spec(value);
+        }
+
+        if(spec instanceof Type){
+            return spec.check(target, value, trace);
+        }
+
+        if(isBaseType(spec)){
+            return checkBaseType(spec, value, trace);
+        } else if(spec instanceof Function){
+            if(value && value instanceof spec){
+                return value;
+            }
+        } else if(spec instanceof Object){
+            return checkObject(spec, target, value, trace);
+        }
     }
 
-    if(spec instanceof Type){
-        return spec.check(value);
-    }
-
-    if(isBaseType(spec)){
-        return checkBaseType(spec, value);
-    } else if(spec && spec instanceof Object){
-        return checkObject(spec, {}, value);
-    }
-
-    if(value && value instanceof spec){
-        return value;
-    }
-
-    throw new Error(`Invalid type: Expected ${spec}, Got: ${value}`);
+    throwError(`Invalid type: Expected ${spec.name || spec}, Got: ${value}`, trace);
 }
 
 function Maybe(spec, defaultValue){
@@ -84,7 +96,7 @@ function Maybe(spec, defaultValue){
 }
 Maybe.prototype = Object.create(Type.prototype);
 Maybe.prototype.constructor = Maybe;
-Maybe.prototype.check = function(value){
+Maybe.prototype.check = function(target, value, trace){
     if(value == null){
         if('defaultValue' in this){
             return this.defaultValue;
@@ -93,7 +105,7 @@ Maybe.prototype.check = function(value){
         return value;
     }
 
-    return check(this.spec, value);
+    return check(this.spec, target, value, trace);
 }
 
 function Null(){
@@ -103,7 +115,7 @@ function Null(){
 }
 Null.prototype = Object.create(Type.prototype);
 Null.prototype.constructor = Null;
-Null.prototype.check = function(value){
+Null.prototype.check = function(target, value, trace){
     return value == null;
 }
 
@@ -116,22 +128,22 @@ function Custom(validate){
 }
 Custom.prototype = Object.create(Type.prototype);
 Custom.prototype.constructor = Custom;
-Custom.prototype.check = function(value){
-    return this.validate(value);
+Custom.prototype.check = function(target, value, trace){
+    return this.validate(value, target);
 }
 
-function Union(){
-    if(!(this instanceof Union)){
-        return Union.apply(Object.create(Union.prototype), arguments);
+function And(){
+    if(!(this instanceof And)){
+        return And.apply(Object.create(And.prototype), arguments);
     }
 
     this.types = [].slice.call(arguments);
     return this;
 }
-Union.prototype = Object.create(Type.prototype);
-Union.prototype.constructor = Union;
-Union.prototype.check = function(value){
-    return this.types.reduce((result, type) => check(type, result), value);
+And.prototype = Object.create(Type.prototype);
+And.prototype.constructor = And;
+And.prototype.check = function(target, value, trace){
+    return this.types.reduce((result, type) => check(type, target, result, trace), value);
 }
 
 function Or(){
@@ -144,12 +156,12 @@ function Or(){
 }
 Or.prototype = Object.create(Type.prototype);
 Or.prototype.constructor = Or;
-Or.prototype.check = function(value){
+Or.prototype.check = function(target, value, trace){
     var lastError;
     var i = -1;
     while(++i < this.types.length){
         try {
-            return check(this.types[i], value)
+            return check(this.types[i], target, value, trace)
         } catch (error) {
             lastError = error;
         }
@@ -161,9 +173,13 @@ Or.prototype.check = function(value){
 function SubSpec(){}
 
 function blazon(spec){
+    var stackTraceLimit = Error.stackTraceLimit;
+    Error.stackTraceLimit = 2;
+    var trace = (new Error()).stack.match(/at blazon.*\n\s*(.*)/)[1] + '\n';
+    Error.stackTraceLimit = stackTraceLimit;
     function Spec(data){
         if(isBaseType(spec)){
-            return checkBaseType(spec, data);
+            return checkBaseType(spec, data, trace);
         }
 
         if(!(this instanceof Spec)){
@@ -171,12 +187,10 @@ function blazon(spec){
         }
 
         if(spec instanceof Type){
-            return spec.check(data);
+            return spec.check(this, data, trace);
         }
 
-        checkObject(spec, this, data);
-
-        return this;
+        return check(spec, this, data, trace);
     }
     Spec.prototype = Object.create(SubSpec.prototype);
     Spec.constructor = Spec;
@@ -233,7 +247,7 @@ function magic(signature, resultSpec, task){
 
 module.exports.Maybe = Maybe;
 module.exports.Custom = Custom;
-module.exports.Union = Union;
+module.exports.And = And;
 module.exports.Or = Or;
 module.exports.ensure = ensure;
 module.exports.magic = magic;
