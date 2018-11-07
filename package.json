@@ -1,6 +1,6 @@
 {
   "name": "blazon",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "description": "A fast run-time non-trivial type checker with an idiomatic API",
   "main": "index.js",
   "directories": {
