@@ -1,14 +1,15 @@
 # blazon
 
-A small, fast, non-trivial, dependancy-free, non-stick, fully-franked, run-time type checker with an idiomatic API
+A small, fast, non-trivial, dependency-free, non-stick, fully-franked, run-time type checker with an idiomatic API.
 
 `HERALDRY`
-describe or depict (armorial bearings) in a correct heraldic manner.
+> Describe or depict (armorial bearings) in a correct heraldic manner.
 
 # Example:
 
 ## Creating Types:
-```
+
+```js
 var blazon = require('blazen');
 var { Maybe, Custom } = blazon;
 
@@ -39,7 +40,7 @@ function greetUser(maybeNotAValidUser){
 
 ```
 
-# Frigin-fast
+# Friggin' fast
 
 On an i7 laptop:
 
@@ -73,7 +74,7 @@ Ensures a value is any one of `Types`.
 
 Ensures `fn(value)` does not throw.
 
-The value returned from `fn` will be the result of the type instansiation.
+The value returned from `fn` will be the result of the type instantiation.
 
 # `ensure(types..., function)`
 
@@ -93,4 +94,4 @@ var myFunction = blazon.magic({ firstName: String, surname: String }, String, _=
 
 throws if either the arguments or the return value are the wrong types.
 
-Arguments exist automagicaly.
+Arguments exist automagically.
