@@ -60,7 +60,7 @@ Extra types provided by blazon:
 
 ## `Maybe(Type, default<optional>)`
 
-Ensure a value is either Type or null/undefined
+Ensure a value is either Type or null/undefined.
 
 ## `And(Types...)`
 
@@ -70,9 +70,9 @@ Ensures a value is every one of `Types`.
 
 Ensures a value is any one of `Types`.
 
-## `Cast(BaseType)` OR `Cast(Type, fn customConverer(value, target))` OR
+## `Cast(BaseType)` OR `Cast(sourceType, targetType, fn customConverer(value, target))` OR
 
-Casts a value to a BaseType OR Casts to anything with a customConverter
+Casts a value to a BaseType OR Casts from anything to anything with a customConverter.
 
 ## `Custom(fn<value>)`
 
@@ -82,7 +82,7 @@ The value returned from `fn` will be the result of the type instantiation.
 
 # `ensure(types..., function)`
 
-Create a function which only accepts specifically typed arguments
+Create a function which only accepts specifically typed arguments.
 
 # `magic(argumentTypeSignature, resultType, task)`
 
