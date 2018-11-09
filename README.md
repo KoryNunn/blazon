@@ -50,7 +50,7 @@ On an i7 laptop:
 
 10,000 non-trivial failing checks can be performed in ~37ms
 
-# Available base types:
+# Available base types (BaseType):
 
 value type constructors are valid, eg:
 
@@ -69,6 +69,10 @@ Ensures a value is every one of `Types`.
 ## `Or(Types...)`
 
 Ensures a value is any one of `Types`.
+
+## `Cast(BaseType)` OR `Cast(Type, fn customConverer(value, target))` OR
+
+Casts a value to a BaseType OR Casts to anything with a customConverter
 
 ## `Custom(fn<value>)`
 

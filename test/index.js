@@ -177,6 +177,14 @@ test('Cast throws on non-base-value', function(t){
     }, 'Throws on complex type');
 });
 
+test('Cast throws on bad usage', function(t){
+    t.plan(1);
+
+    t.throws(function(){
+        blazon(blazon.Cast(String, Number));
+    }, 'Throws on bad usage');
+});
+
 test('Cast to string', function(t){
     t.plan(5);
 
@@ -230,6 +238,24 @@ test('Cast to Boolean', function(t){
     t.throws(function(){
         CastToBoolean({});
     }, 'Fails cast from object to bool');
+});
+
+test('Cast with customConverter', function(t){
+    t.plan(5);
+
+    var IsGreaterThan10 = blazon(blazon.Cast(Number, Boolean, x => x > 10));
+
+    t.equal(IsGreaterThan10(12), true);
+    t.equal(IsGreaterThan10(0), false);
+    t.equal(IsGreaterThan10(-1), false);
+
+    t.throws(function(){
+        IsGreaterThan10('true');
+    }, 'Fails cast from string to bool');
+
+    t.throws(function(){
+        IsGreaterThan10(true);
+    }, 'Fails cast from bool to bool');
 });
 
 test('instanceof check', function(t){

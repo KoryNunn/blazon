@@ -81,12 +81,12 @@ function checkObject(spec, target, data, trace){
         throwError(`Invalid type: Expected ${spec.name || spec}, Got: ${data}`, trace);
     }
 
-    for(var key in spec){
+    Object.keys(spec).map(key => {
         var result = check(spec[key], target[key] || {}, data[key], `\`${key}\`: ${trace}`);
         if(result || key in data){
             target[key] = result && result instanceof Default ? result.value : result;
         }
-    }
+    });
 
     return target;
 }
@@ -209,16 +209,21 @@ Or.prototype.check = function(target, value, trace){
     throw lastError;
 }
 
-function Cast(targetType, customConverter){
-    if(!isBaseType(targetType)){
+function Cast(baseOrSourceType, targetType, customConverter){
+    if(!customConverter && !isBaseType(baseOrSourceType)){
         throw new Error(`Only BaseTypes (${Object.keys(constructors)}) can be cast to`);
     }
 
+    if(arguments.length === 2){
+        throw new Error(`Cast can only be either Cast(targetBaseType) OR Cast(sourceType, targetType, customConverter)`);
+    }
+
     if(!(this instanceof Cast)){
-        return new Cast(targetType, customConverter);
+        return new Cast(baseOrSourceType, targetType, customConverter);
     }
 
     this.targetType = targetType;
+    this.baseOrSourceType = baseOrSourceType;
     this.customConverter = customConverter;
     return this;
 }
@@ -226,10 +231,14 @@ Cast.prototype = Object.create(Type.prototype);
 Cast.prototype.constructor = Cast;
 Cast.prototype.check = function(target, value, trace){
     if(this.customConverter){
-        return check(this.targetType, target, this.customConverter(value, target), trace);
+        return check(this.targetType, target,
+            this.customConverter(
+                check(this.baseOrSourceType, target, value),
+            target),
+        trace);
     }
 
-    return casts[this.targetType.name](value, trace);
+    return casts[this.baseOrSourceType.name](value, trace);
 }
 
 function SubSpec(){}
