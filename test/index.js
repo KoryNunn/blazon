@@ -127,7 +127,10 @@ test('check custom constructor', function(t){
 test('Spec.is', function(t){
     t.plan(3);
 
-    var NonEmptyString = blazon(blazon.And(String, blazon.Custom(x => assert(x, 'Must not be empty'))));
+    var NonEmptyString = blazon(blazon.And(String, blazon.Custom(x => {
+        assert(x, 'Must not be empty');
+        return x;
+    })));
 
     t.ok(NonEmptyString.is('x'));
 
@@ -138,7 +141,10 @@ test('Spec.is', function(t){
 test('And', function(t){
     t.plan(3);
 
-    var NonEmptyString = blazon(blazon.And(String, blazon.Custom(x => assert(x, 'Must not be empty'))));
+    var NonEmptyString = blazon(blazon.And(String, blazon.Custom(x => {
+        assert(x, 'Must not be empty');
+        return x;
+    })));
 
     t.ok(NonEmptyString('x'));
 
@@ -161,6 +167,69 @@ test('Or', function(t){
     t.throws(function(){
         StringOrNumber(false);
     }, 'Fails string check');
+});
+
+test('Cast throws on non-base-value', function(t){
+    t.plan(1);
+
+    t.throws(function(){
+        blazon(blazon.Cast(blazon.Maybe(String)));
+    }, 'Throws on complex type');
+});
+
+test('Cast to string', function(t){
+    t.plan(5);
+
+    var CastToString = blazon(blazon.Cast(String));
+
+    t.equal(CastToString('1'), '1');
+    t.equal(CastToString(1), '1');
+    t.equal(CastToString(true), 'true');
+
+    t.throws(function(){
+        CastToString([]);
+    }, 'Fails cast from array to string');
+
+    t.throws(function(){
+        CastToString({});
+    }, 'Fails cast from object to string');
+});
+
+test('Cast to number', function(t){
+    t.plan(3);
+
+    var CastToNumber = blazon(blazon.Cast(Number));
+
+    t.equal(CastToNumber(1), 1);
+    t.equal(CastToNumber('1'), 1);
+
+    t.throws(function(){
+        CastToNumber(true);
+    }, 'Fails cast from bool to number');
+});
+
+test('Cast to Boolean', function(t){
+    t.plan(8);
+
+    var CastToBoolean = blazon(blazon.Cast(Boolean));
+
+    t.equal(CastToBoolean(true), true);
+    t.equal(CastToBoolean(0), false);
+    t.equal(CastToBoolean(1), true);
+    t.equal(CastToBoolean('true'), true);
+    t.equal(CastToBoolean('false'), false);
+
+    t.throws(function(){
+        CastToBoolean('1');
+    }, 'Fails cast from string to bool');
+
+    t.throws(function(){
+        CastToBoolean(4);
+    }, 'Fails cast from arbitrary value to bool');
+
+    t.throws(function(){
+        CastToBoolean({});
+    }, 'Fails cast from object to bool');
 });
 
 test('instanceof check', function(t){

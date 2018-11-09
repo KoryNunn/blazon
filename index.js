@@ -1,3 +1,11 @@
+function throwError(message, trace){
+    var error = new Error(`\nBlazon error:\n\t${message}\n\nSpec:\n\t${trace}\nSource:`)
+
+    error.stack = error.stack.replace(/^.*\/blazon\/.*$\n/gm, '');
+
+    throw error;
+}
+
 function Type(){}
 function Default(value){
     this.value = value;
@@ -9,19 +17,50 @@ var constructors = {
     'Boolean': true.constructor
 }
 
+var casts = {
+    'String': (value, trace) => {
+        if(value && value instanceof Object){
+            throwError(`Invalid type: Expected castable to String, Got: ${value}`, trace);
+        }
+        return String(value);
+    },
+    'Number': (value, trace) => {
+        if(typeof value === 'number'){
+            return value;
+        }
+
+        var result = Number(value);
+
+        if(result != String(value) || isNaN(result)){
+            throwError(`Invalid type: Expected castable to Number, Got: ${value}`, trace);
+        }
+
+        return result;
+    },
+    'Boolean': (value, trace) => {
+        var type = typeof value;
+
+        if(type === 'boolean'){
+            return value;
+        }
+
+        if(type === 'string' && value === 'true' || value === 'false'){
+            return value === 'true';
+        }
+
+        if(type === 'number' && value === 0 || value === 1){
+            return value !== 0;
+        }
+
+        throwError(`Invalid type: Expected castable to Boolean, Got: ${value}`, trace);
+    }
+}
+
 function isBaseType(spec){
     return (
         spec.name in constructors &&
         constructors[spec.name] === spec
     );
-}
-
-function throwError(message, trace){
-    var error = new Error(`\nBlazon error:\n\t${message}\n\nSpec:\n\t${trace}\nSource:`)
-
-    error.stack = error.stack.replace(/^.*\/blazon\/.*$\n/gm, '');
-
-    throw error;
 }
 
 function checkBaseType(spec, value, trace){
@@ -170,6 +209,29 @@ Or.prototype.check = function(target, value, trace){
     throw lastError;
 }
 
+function Cast(targetType, customConverter){
+    if(!isBaseType(targetType)){
+        throw new Error(`Only BaseTypes (${Object.keys(constructors)}) can be cast to`);
+    }
+
+    if(!(this instanceof Cast)){
+        return new Cast(targetType, customConverter);
+    }
+
+    this.targetType = targetType;
+    this.customConverter = customConverter;
+    return this;
+}
+Cast.prototype = Object.create(Type.prototype);
+Cast.prototype.constructor = Cast;
+Cast.prototype.check = function(target, value, trace){
+    if(this.customConverter){
+        return check(this.targetType, target, this.customConverter(value, target), trace);
+    }
+
+    return casts[this.targetType.name](value, trace);
+}
+
 function SubSpec(){}
 
 function blazon(spec){
@@ -183,7 +245,7 @@ function blazon(spec){
         }
 
         if(!(this instanceof Spec)){
-            return new Spec(data);
+            return Spec.call(Object.create(Spec.prototype), data);
         }
 
         if(spec instanceof Type){
@@ -249,5 +311,6 @@ module.exports.Maybe = Maybe;
 module.exports.Custom = Custom;
 module.exports.And = And;
 module.exports.Or = Or;
+module.exports.Cast = Cast;
 module.exports.ensure = ensure;
 module.exports.magic = magic;
