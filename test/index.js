@@ -258,6 +258,24 @@ test('Cast with customConverter', function(t){
     }, 'Fails cast from bool to bool');
 });
 
+test('Maybe Cast', function(t){
+    t.plan(5);
+
+    var MaybeCastToNumber = blazon(blazon.Maybe(blazon.Cast(Number)));
+
+    t.equal(MaybeCastToNumber(1), 1);
+    t.equal(MaybeCastToNumber('1'), 1);
+    t.equal(MaybeCastToNumber(null), null);
+
+    t.throws(function(){
+        MaybeCastToNumber('true');
+    }, 'Fails cast from string to bool');
+
+    t.throws(function(){
+        MaybeCastToNumber(true);
+    }, 'Fails cast from bool to bool');
+});
+
 test('instanceof check', function(t){
     t.plan(1);
 
