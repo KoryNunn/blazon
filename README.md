@@ -10,7 +10,7 @@ A small, fast, non-trivial, dependency-free, non-stick, fully-franked, run-time 
 ## Creating Types:
 
 ```js
-var blazon = require('blazen');
+var blazon = require('blazon');
 var { Maybe, Custom } = blazon;
 
 const Email = blazon(blazon.And(
