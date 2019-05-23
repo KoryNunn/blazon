@@ -58,6 +58,10 @@ value type constructors are valid, eg:
 
 Extra types provided by blazon:
 
+## `List(Type[, minLength, maxLength)`
+
+Ensure every item in array matches Type, and optionally, that the length is between a min and max.
+
 ## `Maybe(Type, default<optional>)`
 
 Ensure a value is either Type or null/undefined.

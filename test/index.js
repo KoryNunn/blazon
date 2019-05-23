@@ -16,6 +16,71 @@ function createSpec(){
     });
 }
 
+test('Fixed array', function(t){
+    t.plan(3);
+
+    var TestSpec = blazon([ Number, String, blazon.Maybe(Number) ]);
+
+    t.deepEqual(TestSpec([1, '2']), [1, '2'], 'Valid data passes');
+    t.deepEqual(TestSpec([1, '2', 3]), [1, '2', 3], 'Valid data passes');
+
+    t.throws(function(){
+        TestSpec([1, '2', '3']);
+    }, 'Invalid list throws')
+});
+
+test('List', function(t){
+    t.plan(2);
+
+    var TestSpec = blazon(blazon.List(Number));
+
+    t.deepEqual(TestSpec([1, 2, 3]), [1, 2, 3], 'Valid list of Type passes');
+
+    t.throws(function(){
+        TestSpec([1, '2', 3]);
+    }, 'Invalid list throws')
+});
+
+test('List - min length', function(t){
+    t.plan(2);
+
+    var TestSpec = blazon(blazon.List(Number, 3));
+
+    t.deepEqual(TestSpec([1, 2, 3]), [1, 2, 3], 'Valid list of Type passes');
+
+    t.throws(function(){
+        TestSpec([1, 2]);
+    }, 'Invalid list throws')
+});
+
+test('List - max length', function(t){
+    t.plan(2);
+
+    var TestSpec = blazon(blazon.List(Number, 0, 3));
+
+    t.deepEqual(TestSpec([1, 2, 3]), [1, 2, 3], 'Valid list of Type passes');
+
+    t.throws(function(){
+        TestSpec([1, 2, 3, 4]);
+    }, 'Invalid list throws')
+});
+
+test('List - min and max length', function(t){
+    t.plan(3);
+
+    var TestSpec = blazon(blazon.List(Number, 3, 3));
+
+    t.deepEqual(TestSpec([1, 2, 3]), [1, 2, 3], 'Valid list of Type passes');
+
+    t.throws(function(){
+        TestSpec([1, 2]);
+    }, 'Invalid list throws')
+
+    t.throws(function(){
+        TestSpec([1, 2, 3, 4]);
+    }, 'Invalid list throws')
+});
+
 function logTime(t, iterations, startTime){
     t.pass(`Completed ${iterations} iterations in ${Date.now() - startTime}ms`);
 }

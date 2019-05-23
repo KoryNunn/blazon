@@ -209,6 +209,36 @@ Or.prototype.check = function(target, value, trace){
     throw lastError;
 }
 
+function List(type, minLength, maxLength){
+    if(!(this instanceof List)){
+        return List.apply(Object.create(List.prototype), arguments);
+    }
+
+    this.type = type;
+    this.minLength = minLength || 0;
+    this.maxLength = maxLength || Infinity;
+    return this;
+}
+List.prototype = Object.create(Type.prototype);
+List.prototype.constructor = List;
+List.prototype.check = function(target, value, trace){
+    if(!Array.isArray(value)){
+        throwError(`Invalid type: Expected Array, Got: ${typeof value}`, trace);
+    }
+
+    if(value.length < this.minLength){
+        throwError(`Invalid type: Expected Array of minimum length ${this.minLength}, Got length: ${value.length}`, trace);
+    }
+
+    if(value.length > this.maxLength){
+        throwError(`Invalid type: Expected Array of maximum length ${this.maxLength}, Got length: ${value.length}`, trace);
+    }
+
+    return value.map(item => check(this.type, value, item, trace))
+
+    throw lastError;
+}
+
 function Cast(baseOrSourceType, targetType, customConverter){
     if(!customConverter && !isBaseType(baseOrSourceType)){
         throw new Error(`Only BaseTypes (${Object.keys(constructors)}) can be cast to`);
@@ -320,6 +350,7 @@ module.exports.Maybe = Maybe;
 module.exports.Custom = Custom;
 module.exports.And = And;
 module.exports.Or = Or;
+module.exports.List = List;
 module.exports.Cast = Cast;
 module.exports.ensure = ensure;
 module.exports.magic = magic;
