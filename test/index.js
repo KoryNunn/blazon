@@ -16,6 +16,37 @@ function createSpec(){
     });
 }
 
+test('Exactly', function(t){
+    t.plan(2);
+
+    var TestSpec = blazon({
+        foo: String,
+        bar: blazon.Exactly(undefined)
+    });
+
+    t.deepEqual(TestSpec({ foo: 'foo' }), { foo: 'foo' }, 'Valid data passes');
+
+    t.throws(function(){
+        TestSpec({ foo: 'foo', bar: 'bar' });
+    }, 'Invalid data throws')
+});
+
+test('Exactly Or', function(t){
+    t.plan(3);
+
+    var TestSpec = blazon({
+        foo: String,
+        bar: blazon.Or(blazon.Exactly(null), blazon.Exactly(undefined))
+    });
+
+    t.deepEqual(TestSpec({ foo: 'foo' }), { foo: 'foo' }, 'Valid data passes');
+    t.deepEqual(TestSpec({ foo: 'foo', bar: null }), { foo: 'foo', bar: null }, 'Valid data passes');
+
+    t.throws(function(){
+        TestSpec({ foo: 'foo', bar: 'bar' });
+    }, 'Invalid data throws')
+});
+
 test('Fixed array', function(t){
     t.plan(3);
 

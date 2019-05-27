@@ -140,26 +140,22 @@ function checkObject(spec, target, data, trace){
 }
 
 function check(spec, target, value, trace){
-    if(spec == null){
-        return spec === value && value;
-    } else {
-        if(spec.prototype instanceof SubSpec){
-            return spec(value);
-        }
+    if(spec.prototype instanceof SubSpec){
+        return spec(value);
+    }
 
-        if(spec instanceof Type){
-            return spec.check(target, value, trace);
-        }
+    if(spec instanceof Type){
+        return spec.check(target, value, trace);
+    }
 
-        if(isBaseType(spec)){
-            return checkBaseType(spec, value, trace);
-        } else if(spec instanceof Function){
-            if(value && value instanceof spec){
-                return value;
-            }
-        } else if(spec instanceof Object){
-            return checkObject(spec, target, value, trace);
+    if(isBaseType(spec)){
+        return checkBaseType(spec, value, trace);
+    } else if(spec instanceof Function){
+        if(value && value instanceof spec){
+            return value;
         }
+    } else if(spec instanceof Object){
+        return checkObject(spec, target, value, trace);
     }
 
     throwError(`Invalid type: Expected ${spec.name || spec}, Got: ${printValue(value)}`, trace);
@@ -199,18 +195,23 @@ Maybe.prototype.check = function(target, value, trace){
     return check(this.spec, target, value, trace);
 }
 
-function Null(){
-    if(!(this instanceof Null)){
-        return new Null();
+function Exactly(value){
+    if(!(this instanceof Exactly)){
+        return new Exactly(value);
     }
+    this.exactValue = value;
 }
-Null.prototype = Object.create(Type.prototype);
-Null.prototype.constructor = Null;
-Null.prototype.print = function(){
-    return `Null`
+Exactly.prototype = Object.create(Type.prototype);
+Exactly.prototype.constructor = Exactly;
+Exactly.prototype.print = function () {
+    return `Exactly(${JSON.stringify(this.exactValue, null, 4)})`;
 }
-Null.prototype.check = function(target, value, trace){
-    return value == null;
+Exactly.prototype.check = function(target, value, trace){
+    if(value === this.exactValue){
+        return value;
+    }
+
+    throwError(`Invalid type: Expected exactly ${JSON.stringify(this.exactValue)}, Got: ${printValue(value)}`, trace);
 }
 
 function Custom(validate){
@@ -432,5 +433,6 @@ module.exports.And = And;
 module.exports.Or = Or;
 module.exports.List = List;
 module.exports.Cast = Cast;
+module.exports.Exactly = Exactly;
 module.exports.ensure = ensure;
 module.exports.magic = magic;
