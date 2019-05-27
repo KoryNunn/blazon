@@ -1,3 +1,47 @@
+function printValue(value){
+    if(typeof value === 'function'){
+        return value.toString();
+    }
+
+    return JSON.stringify(value, null, 4);
+}
+
+function printType(type){
+    if(type && type.type){
+        return printType(type.type);
+    }
+
+    if(type === null){
+        return 'null';
+    }
+
+    if(type instanceof Type){
+        return type.print();
+    }
+
+    if(typeof type === 'function'){
+        return type.name;
+    }
+
+    if(Array.isArray(type)){
+        return `Array [ ${printTypes(type)} ]`;
+    }
+
+    if(typeof type === 'object'){
+        var description = '\nObject {\n';
+        for(var key in type){
+            description += `\t${key}: ${printType(type[key])}\n`;
+        }
+        description += '}\n';
+
+        return description;
+    }
+}
+
+function printTypes(types){
+    return types.map(printType).join(', ');
+}
+
 function throwError(message, trace){
     var error = new Error(`\nBlazon error:\n\t${message}\n\nSpec:\n\t${trace}\nSource:`)
 
@@ -7,6 +51,10 @@ function throwError(message, trace){
 }
 
 function Type(){}
+Type.prototype.print = function(){
+    return this.constructor.name;
+}
+
 function Default(value){
     this.value = value;
 }
@@ -20,7 +68,7 @@ var constructors = {
 var casts = {
     'String': (value, trace) => {
         if(value && value instanceof Object){
-            throwError(`Invalid type: Expected castable to String, Got: ${value}`, trace);
+            throwError(`Invalid type: Expected castable to String, Got: ${printValue(value)}`, trace);
         }
         return String(value);
     },
@@ -32,7 +80,7 @@ var casts = {
         var result = Number(value);
 
         if(result != String(value) || isNaN(result)){
-            throwError(`Invalid type: Expected castable to Number, Got: ${value}`, trace);
+            throwError(`Invalid type: Expected castable to Number, Got: ${printValue(value)}`, trace);
         }
 
         return result;
@@ -52,7 +100,7 @@ var casts = {
             return value !== 0;
         }
 
-        throwError(`Invalid type: Expected castable to Boolean, Got: ${value}`, trace);
+        throwError(`Invalid type: Expected castable to Boolean, Got: ${printValue(value)}`, trace);
     }
 }
 
@@ -73,12 +121,12 @@ function checkBaseType(spec, value, trace){
         return value;
     }
 
-    throwError(`Invalid type: Expected ${spec.name || spec}, Got: ${value}`, trace);
+    throwError(`Invalid type: Expected ${printType(spec)}, Got: ${printValue(value)}`, trace);
 }
 
 function checkObject(spec, target, data, trace){
     if(data == null || !(data instanceof Object)){
-        throwError(`Invalid type: Expected ${spec.name || spec}, Got: ${data}`, trace);
+        throwError(`Invalid type: Expected ${printType(spec)}, Got: ${data}`, trace);
     }
 
     Object.keys(spec).map(key => {
@@ -114,7 +162,7 @@ function check(spec, target, value, trace){
         }
     }
 
-    throwError(`Invalid type: Expected ${spec.name || spec}, Got: ${value}`, trace);
+    throwError(`Invalid type: Expected ${spec.name || spec}, Got: ${printValue(value)}`, trace);
 }
 
 function Maybe(spec, defaultValue){
@@ -135,6 +183,10 @@ function Maybe(spec, defaultValue){
 }
 Maybe.prototype = Object.create(Type.prototype);
 Maybe.prototype.constructor = Maybe;
+Maybe.prototype.print = function(){
+    var defaultPrint = this.hasDefault ? `, Default: ${this.defaultValue.print()}` : '';
+    return `${this.constructor.name}(${printType(this.spec)})${defaultPrint}`
+}
 Maybe.prototype.check = function(target, value, trace){
     if(value == null){
         if('defaultValue' in this){
@@ -154,6 +206,9 @@ function Null(){
 }
 Null.prototype = Object.create(Type.prototype);
 Null.prototype.constructor = Null;
+Null.prototype.print = function(){
+    return `Null`
+}
 Null.prototype.check = function(target, value, trace){
     return value == null;
 }
@@ -167,6 +222,9 @@ function Custom(validate){
 }
 Custom.prototype = Object.create(Type.prototype);
 Custom.prototype.constructor = Custom;
+Custom.prototype.print = function(){
+    return `${this.constructor.name}(...)`;
+}
 Custom.prototype.check = function(target, value, trace){
     return this.validate(value, target);
 }
@@ -181,6 +239,9 @@ function And(){
 }
 And.prototype = Object.create(Type.prototype);
 And.prototype.constructor = And;
+And.prototype.print = function(){
+    return `${this.constructor.name}(${printTypes(this.types)})`;
+}
 And.prototype.check = function(target, value, trace){
     return this.types.reduce((result, type) => check(type, target, result, trace), value);
 }
@@ -195,18 +256,27 @@ function Or(){
 }
 Or.prototype = Object.create(Type.prototype);
 Or.prototype.constructor = Or;
+Or.prototype.print = function(){
+    return `${this.constructor.name}(${printTypes(this.types)})`;
+}
 Or.prototype.check = function(target, value, trace){
-    var lastError;
+    var errors = [];
     var i = -1;
     while(++i < this.types.length){
         try {
             return check(this.types[i], target, value, trace)
         } catch (error) {
-            lastError = error;
+            errors.push(error);
         }
     }
 
-    throw lastError;
+    var descriptions = this.types.map(printType)
+        .map((description, typeIndex) => {
+            return `${description}, which fails with error: ${errors[typeIndex]} ${trace}`;
+        })
+        .join(' OR ');
+
+    throwError(`Invalid type: Expected to be one of ${descriptions}, Got length: ${value.length}`, trace);
 }
 
 function List(type, minLength, maxLength){
@@ -221,9 +291,12 @@ function List(type, minLength, maxLength){
 }
 List.prototype = Object.create(Type.prototype);
 List.prototype.constructor = List;
+List.prototype.print = function(){
+    return `${this.constructor.name}(${printType(this.type)}), minimum length: ${this.minLength}, maximum length: ${this.maxLength}`;
+}
 List.prototype.check = function(target, value, trace){
     if(!Array.isArray(value)){
-        throwError(`Invalid type: Expected Array, Got: ${typeof value}`, trace);
+        throwError(`Invalid type: Expected Array, Got: ${printValue(value)}`, trace);
     }
 
     if(value.length < this.minLength){
@@ -259,6 +332,9 @@ function Cast(baseOrSourceType, targetType, customConverter){
 }
 Cast.prototype = Object.create(Type.prototype);
 Cast.prototype.constructor = Cast;
+Cast.prototype.print = function(){
+    return `${this.constructor.name}(${printType(this.baseOrSourceType)}, ${printType(this.targetType)})`;
+}
 Cast.prototype.check = function(target, value, trace){
     if(this.customConverter){
         return check(this.targetType, target,
@@ -273,42 +349,46 @@ Cast.prototype.check = function(target, value, trace){
 
 function SubSpec(){}
 
-function blazon(spec){
+function blazon(type){
     var stackTraceLimit = Error.stackTraceLimit;
     Error.stackTraceLimit = 2;
     var trace = (new Error()).stack.match(/at blazon.*\n\s*(.*)/)[1] + '\n';
     Error.stackTraceLimit = stackTraceLimit;
     function Spec(data){
-        if(isBaseType(spec)){
-            return checkBaseType(spec, data, trace);
+        if(isBaseType(type)){
+            return checkBaseType(type, data, trace);
         }
 
         if(!(this instanceof Spec)){
             return Spec.call(Object.create(Spec.prototype), data);
         }
 
-        if(spec instanceof Type){
-            return spec.check(this, data, trace);
+        if(type instanceof Type){
+            return type.check(this, data, trace);
         }
 
-        return check(spec, this, data, trace);
+        return check(type, this, data, trace);
     }
     Spec.prototype = Object.create(SubSpec.prototype);
     Spec.constructor = Spec;
+    Spec.type = type;
+    Spec.print = function(){
+        return printType(this);
+    };
     Spec.test = function(data, callback){
         try{
             callback(null, Spec(data));
         } catch (error) {
             callback(error);
         }
-    }
+    };
     Spec.is = function(data){
         try{
             return Spec(data) && true;
         } catch (error) {
             return false;
         }
-    }
+    };
 
     return Spec;
 }
