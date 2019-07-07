@@ -372,6 +372,38 @@ test('Maybe Cast', function(t){
     }, 'Fails cast from bool to bool');
 });
 
+test('Maybe invalid usage, no initialise', function(t){
+    t.plan(1);
+
+    var InvalidMaybe = blazon(blazon.Maybe);
+
+    try {
+        InvalidMaybe('x')
+    } catch (error) {
+        t.ok(error.message.includes('Maybe must be initialized before use, eg: function Maybe(spec, defaultValue)'))
+    }
+});
+
+test('Any', function(t){
+    t.plan(3);
+
+    var Any = blazon(blazon.Any());
+
+    t.equal(Any(1), 1);
+    t.equal(Any('1'), '1');
+    t.equal(Any(null), null);
+});
+
+test('Any no init', function(t){
+    t.plan(3);
+
+    var Any = blazon(blazon.Any);
+
+    t.equal(Any(1), 1);
+    t.equal(Any('1'), '1');
+    t.equal(Any(null), null);
+});
+
 test('instanceof check', function(t){
     t.plan(1);
 

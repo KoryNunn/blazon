@@ -148,6 +148,13 @@ function check(spec, target, value, trace){
         return spec.check(target, value, trace);
     }
 
+    if(spec.prototype instanceof Type){
+        if(spec.length){
+            throwError(`Invalid usage: ${spec.name} must be initialized before use, eg: ${spec.toString().match(/function.*?(\w*.*\))/)[0]}`);
+        }
+        return spec.prototype.check(target, value, trace);
+    }
+
     if(isBaseType(spec)){
         return checkBaseType(spec, value, trace);
     } else if(spec instanceof Function){
@@ -348,6 +355,20 @@ Cast.prototype.check = function(target, value, trace){
     return casts[this.baseOrSourceType.name](value, trace);
 }
 
+function Any(){
+    if(!(this instanceof Any)){
+        return new Any();
+    }
+}
+Any.prototype = Object.create(Type.prototype);
+Any.prototype.constructor = Any;
+Any.prototype.print = function(){
+    return `${this.constructor.name}()`;
+}
+Any.prototype.check = function(target, value, trace){
+    return value;
+}
+
 function SubSpec(){}
 
 function blazon(type){
@@ -434,5 +455,6 @@ module.exports.Or = Or;
 module.exports.List = List;
 module.exports.Cast = Cast;
 module.exports.Exactly = Exactly;
+module.exports.Any = Any;
 module.exports.ensure = ensure;
 module.exports.magic = magic;
