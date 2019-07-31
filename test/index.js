@@ -384,6 +384,28 @@ test('Maybe invalid usage, no initialise', function(t){
     }
 });
 
+test('Maybe default', function(t){
+    t.plan(1);
+
+    var DefaultOne = blazon(blazon.Maybe(Number, 1));
+
+    var result = DefaultOne();
+
+    t.equal(result, 1);
+});
+
+test('Maybe default in object', function(t){
+    t.plan(1);
+
+    var DefaultProperty = blazon({
+        foo: blazon.Maybe(Number, 1)
+    });
+
+    var result = DefaultProperty({});
+
+    t.equal(result.foo, 1);
+});
+
 test('Any', function(t){
     t.plan(3);
 

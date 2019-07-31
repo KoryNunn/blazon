@@ -132,7 +132,7 @@ function checkObject(spec, target, data, trace){
     Object.keys(spec).map(key => {
         var result = check(spec[key], target[key] || {}, data[key], `\`${key}\`: ${trace}`);
         if(result || key in data){
-            target[key] = result && result instanceof Default ? result.value : result;
+            target[key] = result;
         }
     });
 
@@ -145,7 +145,8 @@ function check(spec, target, value, trace){
     }
 
     if(spec instanceof Type){
-        return spec.check(target, value, trace);
+        var result = spec.check(target, value, trace);
+        return result instanceof Default ? result.value : result
     }
 
     if(spec.prototype instanceof Type){
@@ -383,10 +384,6 @@ function blazon(type){
 
         if(!(this instanceof Spec)){
             return Spec.call(Object.create(Spec.prototype), data);
-        }
-
-        if(type instanceof Type){
-            return type.check(this, data, trace);
         }
 
         return check(type, this, data, trace);
