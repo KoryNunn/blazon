@@ -34,8 +34,6 @@ function greetUser(maybeNotAValidUser){
     var user = User(maybeNotAValidUser);
 
     // user is valid at this point.
-
-    user instanceof User === true;
 }
 
 ```
@@ -74,11 +72,15 @@ Ensures a value is every one of `Types`.
 
 Ensures a value is any one of `Types`.
 
-## `Cast(BaseType)` OR `Cast(sourceType, targetType, fn customConverer(value, target))` OR
+## `Exactly(value)`
+
+Ensures a value is exactly `value`
+
+## `Cast(BaseType)` OR `Cast(sourceType, targetType, fn customConverer(value, target))`
 
 Casts a value to a BaseType OR Casts from anything to anything with a customConverter.
 
-## `Custom(fn<value>)`
+## `Custom(fn<value, target, trace>)`
 
 Ensures `fn(value)` does not throw.
 
@@ -87,19 +89,3 @@ The value returned from `fn` will be the result of the type instantiation.
 # `ensure(types..., function)`
 
 Create a function which only accepts specifically typed arguments.
-
-# `magic(argumentTypeSignature, resultType, task)`
-
-Dragons.
-
-## Example:
-
-```
-var myFunction = blazon.magic({ firstName: String, surname: String }, String, _=> {
-    return firstName + ' ' + surname;
-})
-```
-
-throws if either the arguments or the return value are the wrong types.
-
-Arguments exist automagically.

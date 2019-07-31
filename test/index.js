@@ -16,6 +16,45 @@ function createSpec(){
     });
 }
 
+test('structured data', function(t){
+    t.plan(2);
+
+    var TestSpec = blazon({
+        foo: String
+    });
+
+    t.deepEqual(TestSpec({ foo: 'foo' }), { foo: 'foo' }, 'Valid data passes');
+
+    t.throws(function(){
+        TestSpec({ foo: 3 });
+    }, 'Invalid data throws')
+});
+
+test('structured data - array', function(t){
+    t.plan(3);
+
+    var TestSpec = blazon([String]);
+
+    t.ok(Array.isArray(TestSpec(['foo'])), 'Returns correct type');
+    t.deepEqual(TestSpec(['foo']), ['foo'], 'Valid data passes');
+
+    t.throws(function(){
+        TestSpec({ '0': 'foo' });
+    }, 'Invalid data throws')
+});
+
+test('structured data - function', function(t){
+    t.plan(2);
+
+    var TestSpec = blazon(Function);
+
+    t.ok(typeof TestSpec(() => {}) === 'function', 'Returns correct type');
+
+    t.throws(function(){
+        TestSpec({});
+    }, 'Invalid data throws')
+});
+
 test('Exactly', function(t){
     t.plan(2);
 
@@ -426,52 +465,6 @@ test('Any no init', function(t){
     t.equal(Any(null), null);
 });
 
-test('instanceof check', function(t){
-    t.plan(1);
-
-    var spec = blazon({
-        something: String
-    });
-
-    var thing = spec({
-        something: 'foo'
-    });
-
-    t.ok(thing instanceof spec);
-});
-
-test('Sub Spec', function(t){
-    t.plan(4);
-
-    var subSpec = blazon({
-        something: String
-    });
-
-    var spec = blazon({
-        sub: subSpec
-    });
-
-    var thing = spec({
-        sub: {
-            something: 'foo'
-        }
-    });
-
-    t.pass('didnt throw');
-    t.ok(thing instanceof spec, 'Right instance');
-    t.ok(thing.sub instanceof subSpec, 'Right sub instance');
-
-    try{
-        spec({
-            sub: {
-                something: false
-            }
-        });
-    } catch (error) {
-        t.ok(~error.message.indexOf('Invalid type: Expected String, Got: false'), 'Threw in subSpec');
-    }
-});
-
 test('ensure', function(t){
     t.plan(2);
 
@@ -506,57 +499,4 @@ test('ensure maybe bad position', function(t){
     t.throws(function(){
         add(1, null);
     }, 'Fails for Invalid omitted data');
-});
-
-test('magic', function(t){
-    t.plan(1);
-
-    var add = blazon.magic({ a: String, b: String }, Number, () => {
-        return a + b;
-    })
-
-    t.equal(add(2, 2, true), 4, 'Works for valid data');
-});
-
-test('magic 2', function(t){
-    t.plan(1);
-
-    var add = blazon.magic({ a: String, b: String }, Number, function(){
-        return a + b;
-    })
-
-    t.equal(add(2, 2, true), 4, 'Works for valid data');
-});
-
-test('magic no return type', function(t){
-    t.plan(1);
-
-    var add = blazon.magic({ a: String, b: String }, _=> {
-        return a + b;
-    });
-
-    t.equal(add(2, 2, true), 4, 'Works for valid data');
-});
-
-test('magic maybe', function(t){
-    t.plan(2);
-
-    var add = blazon.magic({ a: String, b: String, c: blazon.Maybe(Boolean) }, Number, _=> {
-        return c ? a + b : 0;
-    });
-
-    t.equal(add(2, 2, true), 4, 'Works for valid data');
-    t.equal(add(2, 2), 0, 'Works for valid omitted data');
-});
-
-test('magic bad return', function(t){
-    t.plan(1);
-
-    var add = blazon.magic({ a: String, b: String, c: blazon.Maybe(Boolean) }, Number, _=> {
-        return false;
-    });
-
-    t.throws(function(){
-        add(2, 2, true);
-    }, 'Throws for bad result');
 });

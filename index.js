@@ -163,7 +163,9 @@ function check(spec, target, value, trace){
             return value;
         }
     } else if(spec instanceof Object){
-        return checkObject(spec, target, value, trace);
+        if(Array.isArray(spec) === Array.isArray(target)){
+            return checkObject(spec, target, value, trace);
+        }
     }
 
     throwError(`Invalid type: Expected ${spec.name || spec}, Got: ${printValue(value)}`, trace);
@@ -235,7 +237,7 @@ Custom.prototype.print = function(){
     return `${this.constructor.name}(...)`;
 }
 Custom.prototype.check = function(target, value, trace){
-    return this.validate(value, target);
+    return this.validate(value, target, trace);
 }
 
 function And(){
@@ -382,11 +384,12 @@ function blazon(type){
             return checkBaseType(type, data, trace);
         }
 
-        if(!(this instanceof Spec)){
-            return Spec.call(Object.create(Spec.prototype), data);
-        }
+        var target = typeof data === 'object' ?
+            Array.isArray(data) ? [] :
+            {} :
+            null;
 
-        return check(type, this, data, trace);
+        return check(type, target, data, trace);
     }
     Spec.prototype = Object.create(SubSpec.prototype);
     Spec.constructor = Spec;
@@ -420,28 +423,8 @@ function ensure(){
 
     return function(){
         var args = specs.map((spec, index) => blazon(spec)(arguments[index]));
-        while(args[args.length - 1] instanceof SubSpec){
-            args.pop();
-        }
-        return task.apply(null, args.map(arg => arg && arg instanceof SubSpec ? null : arg));
-    };
-}
 
-function magic(signature, resultSpec, task){
-    var argNames = Object.keys(signature);
-    var ResultSpec = arguments.length < 3 ? null : blazon(resultSpec);
-    var fnBody = (ResultSpec ? task : resultSpec).toString()
-        .match(/^(?:[^]*=>|function.*?)(?:[^]*?{)?([^]*?)}?\n?$/)[1];
-
-    var fn = Function.apply(null, argNames.concat(fnBody));
-
-    if(!ResultSpec){
-        return fn;
-    }
-
-    return function(){
-        var result = fn.apply(this, arguments);
-        return ResultSpec(result);
+        return task.apply(null, args);
     };
 }
 
@@ -454,4 +437,3 @@ module.exports.Cast = Cast;
 module.exports.Exactly = Exactly;
 module.exports.Any = Any;
 module.exports.ensure = ensure;
-module.exports.magic = magic;
