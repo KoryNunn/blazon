@@ -131,7 +131,7 @@ function checkObject(spec, target, data, trace){
 
     Object.keys(spec).map(key => {
         var result = check(spec[key], target[key] || {}, data[key], `\`${key}\`: ${trace}`);
-        if(result || key in data){
+        if(result !== undefined || key in data){
             target[key] = result;
         }
     });

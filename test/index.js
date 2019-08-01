@@ -30,6 +30,20 @@ test('structured data', function(t){
     }, 'Invalid data throws')
 });
 
+test('structured data, maybe default falsey value', function(t){
+    t.plan(2);
+
+    var TestSpec = blazon({
+        foo: blazon.Maybe(Number, 0)
+    });
+
+    t.deepEqual(TestSpec({ }), { foo: 0 }, 'Valid data passes');
+
+    t.throws(function(){
+        TestSpec({ foo: "3" });
+    }, 'Invalid data throws')
+});
+
 test('structured data - array', function(t){
     t.plan(3);
 
