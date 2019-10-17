@@ -43,7 +43,10 @@ function printTypes(types){
 }
 
 function throwError(message, trace){
-    var error = new Error(`\nBlazon error:\n\t${message}\n\nSpec:\n\t${trace}\nSource:`)
+    var currentStackTraceLimit = Error.stackTraceLimit;
+    Error.stackTraceLimit = 30;
+    var error = new Error(`\nBlazon error:\n\t${message}\n\nSpec:\n\t${trace}\nSource:`);
+    Error.stackTraceLimit = currentStackTraceLimit;
 
     error.stack = error.stack.replace(/^.*\/blazon\/.*$\n/gm, '');
 
