@@ -313,9 +313,37 @@ test('Or', function(t){
     t.ok(StringOrNumber('x'));
     t.ok(StringOrNumber(2));
 
-    t.throws(function(){
-        StringOrNumber(false);
-    }, 'Fails string check');
+    try {
+        StringOrNumber(undefined);
+    } catch (error) {
+        t.ok(~error.message.indexOf('Invalid type: Expected to be one of'), 'Fails Or check');
+    }
+});
+
+test('Or complex Spec', function(t){
+    t.plan(5);
+
+    var StringOrUser = blazon(blazon.Or(
+        String,
+        {
+            firstName: String,
+            lastName: String
+        }
+    ));
+
+    t.ok(StringOrUser('x'));
+    t.ok(StringOrUser({
+        firstName: 'sam',
+        lastName: 'smith'
+    }));
+
+    try {
+        StringOrUser(undefined);
+    } catch (error) {
+        t.ok(~error.message.indexOf('Invalid type: Expected to be one of'), 'Prints nice error');
+        t.ok(~error.message.indexOf('Invalid type: Expected String, Got: undefined'), 'Prints for first spec');
+        t.ok(~error.message.indexOf('Object {'), 'Prints for complex spec');
+    }
 });
 
 test('Cast throws on non-base-value', function(t){

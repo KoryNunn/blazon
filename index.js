@@ -48,7 +48,8 @@ function throwError(message, trace){
     var error = new Error(`\nBlazon error:\n\t${message}\n\nSpec:\n\t${trace}\nSource:`);
     Error.stackTraceLimit = currentStackTraceLimit;
 
-    error.stack = error.stack.replace(/^.*\/blazon\/.*$\n/gm, '');
+    error.shortMessage = message;
+    error.stack = error.stack.replace(/^.*\/blazon\/index\.js.*$\n/gm, '');
 
     throw error;
 }
@@ -240,7 +241,11 @@ Custom.prototype.print = function(){
     return `${this.constructor.name}(...)`;
 }
 Custom.prototype.check = function(target, value, trace){
-    return this.validate(value, target, trace);
+    try {
+        return this.validate(value, target, trace);
+    } catch (error){
+        throwError(error.message);
+    }
 }
 
 function And(){
@@ -286,11 +291,11 @@ Or.prototype.check = function(target, value, trace){
 
     var descriptions = this.types.map(printType)
         .map((description, typeIndex) => {
-            return `${description}, which fails with error: ${errors[typeIndex]} ${trace}`;
+            return `\n${description}, which fails with error: ${(errors[typeIndex].shortMessage || String(errors[typeIndex]))}`;
         })
         .join(' OR ');
 
-    throwError(`Invalid type: Expected to be one of ${descriptions}, Got length: ${value.length}`, trace);
+    throwError(`Invalid type: Expected to be one of ${descriptions}`, trace);
 }
 
 function List(type, minLength, maxLength){
